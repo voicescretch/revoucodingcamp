@@ -2,13 +2,14 @@
 
 ## Introduction
 
-Sistem Manajemen Inventaris & POS (Point of Sales) untuk Bar/Resto UMKM berbasis web. Sistem ini mencakup manajemen stok bahan baku dan produk, pemesanan hybrid (self-order pelanggan & kasir), transaksi POS, pencatatan keuangan harian, dan pelaporan dalam format PDF/Excel. Dibangun dengan Laravel 11 (API), MySQL, React.js/Vue.js + Tailwind CSS.
+Sistem Manajemen Inventaris & POS (Point of Sales) untuk Bar/Resto UMKM berbasis web. Sistem ini mencakup manajemen stok bahan baku dan produk, manajemen meja dengan QR code, pemesanan hybrid (self-order pelanggan via QR meja & kasir), transaksi POS, pencatatan keuangan harian, dan pelaporan dalam format PDF/Excel. Dibangun dengan Laravel 11 (API), MySQL, React.js/Vue.js + Tailwind CSS.
 
 ## Glossary
 
 - **System**: Aplikasi Sistem Manajemen Inventaris & POS Bar/Resto UMKM secara keseluruhan
 - **Inventory_Manager**: Modul yang mengelola stok bahan baku dan produk jadi
 - **Order_Manager**: Modul yang mengelola pemesanan dari pelanggan maupun kasir
+- **Table_Manager**: Modul yang mengelola data meja, QR code meja, dan status meja
 - **POS**: Modul kasir untuk transaksi penjualan dan pembayaran
 - **Finance_Manager**: Modul pencatatan pemasukan dan pengeluaran keuangan
 - **Report_Generator**: Modul yang menghasilkan laporan dalam format PDF dan Excel
@@ -21,6 +22,10 @@ Sistem Manajemen Inventaris & POS (Point of Sales) untuk Bar/Resto UMKM berbasis
 - **Low_Stock_Threshold**: Batas minimum stok yang memicu notifikasi peringatan
 - **Struk**: Bukti transaksi yang dicetak atau ditampilkan setelah pembayaran
 - **Pretty_Printer**: Komponen yang memformat data menjadi output yang dapat dibaca manusia
+- **Order_Code**: Kode unik yang digenerate sistem untuk setiap order, digunakan Pelanggan untuk menunjukkan pesanan ke Kasir saat pembayaran
+- **QR_Meja**: QR code yang tertempel di meja fisik, berisi identitas meja yang terdaftar di sistem
+- **Dine_In**: Tipe pesanan yang dibuat Kasir untuk pelanggan yang makan di tempat, disertai nomor meja
+- **Take_Away**: Tipe pesanan yang dibuat Kasir untuk pelanggan yang membawa pulang pesanan, tanpa nomor meja
 
 ---
 
@@ -69,39 +74,63 @@ Sistem Manajemen Inventaris & POS (Point of Sales) untuk Bar/Resto UMKM berbasis
 4. THE System SHALL menampilkan daftar menu yang tersedia kepada Pelanggan tanpa memerlukan autentikasi
 5. WHEN Pelanggan memfilter menu berdasarkan kategori, THE System SHALL mengembalikan hanya item menu yang sesuai dengan kategori yang dipilih
 
-### Requirement 4: Sistem Pemesanan Hybrid
+### Requirement 4: Manajemen Meja
 
-**User Story:** Sebagai Pelanggan, saya ingin memesan menu melalui website secara mandiri, agar saya tidak perlu menunggu staf untuk mencatat pesanan saya.
-
-**User Story:** Sebagai Kasir, saya ingin membuat pesanan atas nama pelanggan di tempat, agar proses pemesanan dapat dilakukan dengan cepat.
+**User Story:** Sebagai Head_Manager, saya ingin mengelola data meja beserta QR code-nya, agar pelanggan dapat melakukan self-order dengan scan QR code dan status meja dapat dipantau secara real-time.
 
 #### Acceptance Criteria
 
-1. WHEN Pelanggan mengirimkan pesanan melalui website, THE Order_Manager SHALL membuat order baru dengan status "pending" dan mengembalikan nomor order unik
-2. WHEN Kasir membuat pesanan baru melalui antarmuka POS, THE Order_Manager SHALL membuat order baru dengan status "pending" dan menandai order sebagai "kasir-order"
-3. THE Order_Manager SHALL memvalidasi ketersediaan setiap item yang dipesan sebelum mengkonfirmasi order
-4. IF item yang dipesan tidak tersedia, THEN THE Order_Manager SHALL mengembalikan pesan error yang menyebutkan item yang tidak tersedia
-5. WHEN status order diperbarui oleh Kasir, THE Order_Manager SHALL menyimpan perubahan status dan mencatat timestamp perubahan
-6. THE Order_Manager SHALL mendukung status order: pending, confirmed, preparing, ready, completed, dan cancelled
-7. WHEN order dibatalkan, THE Order_Manager SHALL mencatat alasan pembatalan dan memperbarui status menjadi "cancelled"
-8. THE Order_Manager SHALL menyediakan daftar order aktif yang dapat difilter berdasarkan status untuk diakses oleh Kasir
+1. THE Table_Manager SHALL menyimpan data meja dengan atribut: table_number (unik), name, capacity, status, dan qr_code
+2. WHEN Head_Manager menambahkan meja baru, THE Table_Manager SHALL memvalidasi bahwa table_number bersifat unik sebelum menyimpan data
+3. IF table_number yang dimasukkan sudah ada, THEN THE Table_Manager SHALL mengembalikan pesan error yang menyebutkan table_number yang duplikat
+4. WHEN meja baru berhasil disimpan, THE Table_Manager SHALL secara otomatis meng-generate QR_Meja unik yang berisi identitas meja tersebut
+5. WHEN Head_Manager meminta QR code suatu meja, THE Table_Manager SHALL mengembalikan data QR_Meja dalam format yang dapat ditampilkan atau dicetak
+6. THE Table_Manager SHALL mendukung tiga status meja: available, occupied, dan reserved
+7. WHEN Head_Manager memperbarui status meja secara manual menjadi "reserved", THE Table_Manager SHALL menyimpan perubahan status tersebut
+8. IF meja yang akan diubah statusnya tidak ditemukan, THEN THE Table_Manager SHALL mengembalikan pesan error dengan kode HTTP 404
+9. THE Table_Manager SHALL menyediakan daftar semua meja beserta status terkini yang dapat diakses oleh Kasir dan Head_Manager
+10. FOR ALL meja yang terdaftar, QR_Meja yang di-generate SHALL selalu mengarah ke identitas meja yang sama (idempotent)
 
-### Requirement 5: Kasir & Proses Checkout (POS)
+### Requirement 5: Sistem Pemesanan Hybrid
 
-**User Story:** Sebagai Kasir, saya ingin memproses pembayaran dan mencetak struk secara otomatis, agar transaksi tercatat dengan akurat dan stok berkurang sesuai item yang terjual.
+**User Story:** Sebagai Pelanggan, saya ingin memesan menu melalui website dengan scan QR code meja, agar pesanan saya otomatis terhubung ke meja saya dan saya tidak perlu menunggu staf untuk mencatat pesanan.
+
+**User Story:** Sebagai Kasir, saya ingin membuat pesanan atas nama pelanggan di tempat dengan tipe take_away atau dine_in, agar proses pemesanan dapat dilakukan dengan cepat dan sesuai kebutuhan pelanggan.
 
 #### Acceptance Criteria
 
-1. WHEN Kasir memproses pembayaran untuk suatu order, THE POS SHALL memvalidasi bahwa total pembayaran yang diterima lebih besar atau sama dengan total harga order
-2. WHEN pembayaran berhasil diproses, THE POS SHALL secara atomik: mengurangi stok setiap item yang terjual, mencatat transaksi penjualan, dan memperbarui status order menjadi "completed"
-3. IF stok item tidak mencukupi saat checkout, THEN THE POS SHALL membatalkan proses checkout dan mengembalikan pesan error yang menyebutkan item dan jumlah stok yang tersedia
-4. WHEN pembayaran berhasil diproses, THE POS SHALL menghasilkan data Struk yang berisi: nomor transaksi, tanggal/waktu, daftar item, subtotal, pajak (jika ada), total, jumlah bayar, dan kembalian
-5. THE POS SHALL mendukung metode pembayaran: tunai, kartu debit/kredit, dan dompet digital (QRIS)
-6. WHEN Kasir memilih metode pembayaran tunai, THE POS SHALL menghitung dan menampilkan jumlah kembalian
-7. THE POS SHALL menyediakan endpoint untuk mengambil data Struk berdasarkan nomor transaksi untuk keperluan cetak ulang
-8. WHEN transaksi penjualan berhasil dicatat, THE POS SHALL secara otomatis membuat entri pemasukan di Finance_Manager dengan referensi nomor transaksi
+1. WHEN Pelanggan mengakses halaman pemesanan melalui QR_Meja, THE Order_Manager SHALL membaca identitas meja dari parameter QR code dan menampilkan form pemesanan yang sudah terhubung ke meja tersebut
+2. WHEN Pelanggan mengirimkan pesanan melalui halaman QR_Meja, THE Order_Manager SHALL membuat order baru dengan tipe "self_order", status "pending", table_id sesuai meja yang di-scan, dan mengembalikan Order_Code unik kepada Pelanggan
+3. WHEN Kasir membuat pesanan baru dengan tipe "take_away", THE Order_Manager SHALL membuat order baru dengan status "pending" tanpa table_id
+4. WHEN Kasir membuat pesanan baru dengan tipe "dine_in", THE Order_Manager SHALL memvalidasi bahwa meja yang dipilih berstatus "available" sebelum membuat order
+5. IF meja yang dipilih Kasir untuk dine_in tidak berstatus "available", THEN THE Order_Manager SHALL mengembalikan pesan error yang menyebutkan nomor meja dan status meja saat ini
+6. WHEN order dengan tipe "dine_in" atau "self_order" berhasil dibuat, THE Order_Manager SHALL memperbarui status meja yang bersangkutan menjadi "occupied"
+7. THE Order_Manager SHALL memvalidasi ketersediaan setiap item yang dipesan sebelum mengkonfirmasi order
+8. IF item yang dipesan tidak tersedia, THEN THE Order_Manager SHALL mengembalikan pesan error yang menyebutkan item yang tidak tersedia
+9. WHEN status order diperbarui menjadi "completed" atau "cancelled", THE Order_Manager SHALL memperbarui status meja yang terhubung (jika ada) kembali menjadi "available"
+10. WHEN status order diperbarui oleh Kasir, THE Order_Manager SHALL menyimpan perubahan status dan mencatat timestamp perubahan
+11. THE Order_Manager SHALL mendukung status order: pending, confirmed, preparing, ready, completed, dan cancelled
+12. WHEN order dibatalkan, THE Order_Manager SHALL mencatat alasan pembatalan dan memperbarui status menjadi "cancelled"
+13. THE Order_Manager SHALL menyediakan daftar order aktif yang dapat difilter berdasarkan status untuk diakses oleh Kasir
 
-### Requirement 6: Manajemen Keuangan (Finance)
+### Requirement 6: Kasir & Proses Checkout (POS)
+
+**User Story:** Sebagai Kasir, saya ingin memproses pembayaran berdasarkan Order_Code yang ditunjukkan pelanggan dan mencetak struk secara otomatis, agar transaksi tercatat dengan akurat dan stok berkurang sesuai item yang terjual.
+
+#### Acceptance Criteria
+
+1. WHEN Kasir menginput atau men-scan Order_Code yang ditunjukkan Pelanggan, THE POS SHALL mengambil dan menampilkan detail order yang sesuai dengan Order_Code tersebut
+2. IF Order_Code yang diinput tidak ditemukan atau sudah diproses, THEN THE POS SHALL mengembalikan pesan error yang deskriptif
+3. WHEN Kasir memproses pembayaran untuk suatu order, THE POS SHALL memvalidasi bahwa total pembayaran yang diterima lebih besar atau sama dengan total harga order
+4. WHEN pembayaran berhasil diproses, THE POS SHALL secara atomik: mengurangi stok setiap item yang terjual, mencatat transaksi penjualan, dan memperbarui status order menjadi "completed"
+5. IF stok item tidak mencukupi saat checkout, THEN THE POS SHALL membatalkan proses checkout dan mengembalikan pesan error yang menyebutkan item dan jumlah stok yang tersedia
+6. WHEN pembayaran berhasil diproses, THE POS SHALL menghasilkan data Struk yang berisi: nomor transaksi, tanggal/waktu, nomor meja (jika dine_in atau self_order), daftar item, subtotal, pajak (jika ada), total, jumlah bayar, dan kembalian
+7. THE POS SHALL mendukung metode pembayaran: tunai, kartu debit/kredit, dan dompet digital (QRIS)
+8. WHEN Kasir memilih metode pembayaran tunai, THE POS SHALL menghitung dan menampilkan jumlah kembalian
+9. THE POS SHALL menyediakan endpoint untuk mengambil data Struk berdasarkan nomor transaksi untuk keperluan cetak ulang
+10. WHEN transaksi penjualan berhasil dicatat, THE POS SHALL secara otomatis membuat entri pemasukan di Finance_Manager dengan referensi nomor transaksi
+
+### Requirement 7: Manajemen Keuangan (Finance)
 
 **User Story:** Sebagai Finance, saya ingin mencatat semua pemasukan dan pengeluaran harian, agar laporan keuangan bar/resto dapat disusun dengan akurat.
 
@@ -115,7 +144,7 @@ Sistem Manajemen Inventaris & POS (Point of Sales) untuk Bar/Resto UMKM berbasis
 6. IF total pengeluaran melebihi total pemasukan pada suatu periode, THEN THE Finance_Manager SHALL menandai periode tersebut dengan status "rugi" pada rekap keuangan
 7. THE Finance_Manager SHALL menyediakan rekap keuangan mingguan dan bulanan yang dapat diakses oleh Finance dan Head_Manager
 
-### Requirement 7: Pelaporan (Reporting)
+### Requirement 8: Pelaporan (Reporting)
 
 **User Story:** Sebagai Head_Manager atau Finance, saya ingin mengunduh laporan stok, arus barang, dan laba-rugi dalam format PDF dan Excel, agar data dapat dianalisis dan diarsipkan dengan mudah.
 
@@ -131,7 +160,7 @@ Sistem Manajemen Inventaris & POS (Point of Sales) untuk Bar/Resto UMKM berbasis
 8. THE Pretty_Printer SHALL memformat data laporan ke dalam template yang konsisten sebelum dirender ke PDF atau Excel
 9. FOR ALL data laporan yang valid, mengekspor ke PDF kemudian mengekspor ke Excel SHALL menghasilkan data numerik yang identik (round-trip property pada nilai keuangan)
 
-### Requirement 8: Dashboard & Analytics
+### Requirement 9: Dashboard & Analytics
 
 **User Story:** Sebagai Head_Manager, saya ingin melihat ringkasan performa bisnis di dashboard, agar saya dapat mengambil keputusan operasional dengan cepat.
 
@@ -143,7 +172,7 @@ Sistem Manajemen Inventaris & POS (Point of Sales) untuk Bar/Resto UMKM berbasis
 4. WHILE Head_Manager berada di halaman dashboard, THE System SHALL memperbarui data ringkasan setiap 60 detik secara otomatis
 5. THE System SHALL menyediakan data grafik penjualan harian dalam 7 hari terakhir untuk ditampilkan di dashboard
 
-### Requirement 9: Skema Database (ERD)
+### Requirement 10: Skema Database (ERD)
 
 **User Story:** Sebagai developer, saya ingin skema database yang efisien dan ternormalisasi, agar performa query optimal dan integritas data terjaga.
 
@@ -152,15 +181,16 @@ Sistem Manajemen Inventaris & POS (Point of Sales) untuk Bar/Resto UMKM berbasis
 1. THE System SHALL mengimplementasikan tabel `users` dengan kolom: id, name, email, password, role (enum: pelanggan, kasir, finance, head_manager), is_active, timestamps
 2. THE System SHALL mengimplementasikan tabel `products` dengan kolom: id, sku, name, description, category_id, unit, buy_price, sell_price, stock, low_stock_threshold, is_available, image_path, timestamps
 3. THE System SHALL mengimplementasikan tabel `stock_movements` dengan kolom: id, product_id (FK), type (enum: in, out), quantity, stock_before, stock_after, reference_type, reference_id, notes, created_by (FK users), timestamps
-4. THE System SHALL mengimplementasikan tabel `orders` dengan kolom: id, order_number (unique), user_id (FK, nullable untuk walk-in), created_by (FK users), type (enum: self-order, kasir), status (enum: pending, confirmed, preparing, ready, completed, cancelled), notes, timestamps
-5. THE System SHALL mengimplementasikan tabel `order_items` dengan kolom: id, order_id (FK), product_id (FK), quantity, unit_price, subtotal, timestamps
-6. THE System SHALL mengimplementasikan tabel `transactions` dengan kolom: id, transaction_number (unique), order_id (FK), payment_method (enum: cash, card, qris), total_amount, paid_amount, change_amount, status, processed_by (FK users), timestamps
-7. THE System SHALL mengimplementasikan tabel `income_entries` dengan kolom: id, transaction_id (FK, nullable), date, amount, category, description, source (enum: pos, manual), status (enum: pending, validated), created_by (FK users), timestamps
-8. THE System SHALL mengimplementasikan tabel `expense_entries` dengan kolom: id, date, amount, category, description, receipt_path, created_by (FK users), timestamps
-9. THE System SHALL mengimplementasikan tabel `categories` dengan kolom: id, name, type (enum: product, expense), timestamps
-10. THE System SHALL mendefinisikan foreign key constraints dan index pada kolom yang sering digunakan dalam query (product_id, order_id, date, status)
+4. THE System SHALL mengimplementasikan tabel `tables` dengan kolom: id, table_number (unique), name, qr_code (unique), capacity, status (enum: available, occupied, reserved), timestamps
+5. THE System SHALL mengimplementasikan tabel `orders` dengan kolom: id, order_number (unique), order_code (unique), user_id (FK, nullable untuk walk-in), table_id (FK nullable, referensi tabel `tables`), created_by (FK users), order_type (enum: self_order, take_away, dine_in), status (enum: pending, confirmed, preparing, ready, completed, cancelled), notes, timestamps
+6. THE System SHALL mengimplementasikan tabel `order_items` dengan kolom: id, order_id (FK), product_id (FK), quantity, unit_price, subtotal, timestamps
+7. THE System SHALL mengimplementasikan tabel `transactions` dengan kolom: id, transaction_number (unique), order_id (FK), payment_method (enum: cash, card, qris), total_amount, paid_amount, change_amount, status, processed_by (FK users), timestamps
+8. THE System SHALL mengimplementasikan tabel `income_entries` dengan kolom: id, transaction_id (FK, nullable), date, amount, category, description, source (enum: pos, manual), status (enum: pending, validated), created_by (FK users), timestamps
+9. THE System SHALL mengimplementasikan tabel `expense_entries` dengan kolom: id, date, amount, category, description, receipt_path, created_by (FK users), timestamps
+10. THE System SHALL mengimplementasikan tabel `categories` dengan kolom: id, name, type (enum: product, expense), timestamps
+11. THE System SHALL mendefinisikan foreign key constraints dan index pada kolom yang sering digunakan dalam query (product_id, order_id, table_id, date, status)
 
-### Requirement 10: API Endpoint & Struktur Proyek
+### Requirement 11: API Endpoint & Struktur Proyek
 
 **User Story:** Sebagai developer, saya ingin daftar API endpoint yang lengkap dan struktur folder yang standar, agar pengembangan frontend dan backend dapat berjalan paralel dengan kontrak yang jelas.
 
@@ -170,9 +200,12 @@ Sistem Manajemen Inventaris & POS (Point of Sales) untuk Bar/Resto UMKM berbasis
 2. THE Auth_Service SHALL menyediakan endpoint: `POST /api/v1/auth/login`, `POST /api/v1/auth/logout`, `GET /api/v1/auth/me`
 3. THE Inventory_Manager SHALL menyediakan endpoint CRUD untuk produk: `GET/POST /api/v1/products`, `GET/PUT/DELETE /api/v1/products/{id}`, dan `GET /api/v1/products/low-stock`
 4. THE Inventory_Manager SHALL menyediakan endpoint untuk pergerakan stok: `POST /api/v1/stock-movements`, `GET /api/v1/stock-movements`
-5. THE Order_Manager SHALL menyediakan endpoint: `GET/POST /api/v1/orders`, `GET/PUT /api/v1/orders/{id}`, `PUT /api/v1/orders/{id}/status`
-6. THE POS SHALL menyediakan endpoint: `POST /api/v1/transactions/checkout`, `GET /api/v1/transactions/{id}/receipt`
-7. THE Finance_Manager SHALL menyediakan endpoint: `GET/POST /api/v1/expenses`, `GET /api/v1/income`, `GET /api/v1/finance/summary`
-8. THE Report_Generator SHALL menyediakan endpoint: `GET /api/v1/reports/stock`, `GET /api/v1/reports/stock-movement`, `GET /api/v1/reports/profit-loss` — masing-masing mendukung parameter `format` (pdf/excel), `start_date`, dan `end_date`
-9. THE System SHALL mengorganisasi kode backend dalam struktur folder Laravel standar dengan pemisahan: `app/Http/Controllers/API/`, `app/Services/`, `app/Repositories/`, dan `app/Http/Resources/`
-10. WHEN endpoint yang memerlukan autentikasi diakses tanpa token, THE System SHALL mengembalikan respons HTTP 401
+5. THE Table_Manager SHALL menyediakan endpoint CRUD untuk meja: `GET/POST /api/v1/tables`, `GET/PUT /api/v1/tables/{id}`
+6. THE Table_Manager SHALL menyediakan endpoint: `GET /api/v1/tables/{id}/qr` untuk mengambil atau meng-generate QR code meja
+7. THE Order_Manager SHALL menyediakan endpoint: `GET/POST /api/v1/orders`, `GET/PUT /api/v1/orders/{id}`, `PUT /api/v1/orders/{id}/status`
+8. THE POS SHALL menyediakan endpoint: `GET /api/v1/orders/by-code/{code}` untuk Kasir melakukan lookup order berdasarkan Order_Code yang ditunjukkan Pelanggan
+9. THE POS SHALL menyediakan endpoint: `POST /api/v1/transactions/checkout`, `GET /api/v1/transactions/{id}/receipt`
+10. THE Finance_Manager SHALL menyediakan endpoint: `GET/POST /api/v1/expenses`, `GET /api/v1/income`, `GET /api/v1/finance/summary`
+11. THE Report_Generator SHALL menyediakan endpoint: `GET /api/v1/reports/stock`, `GET /api/v1/reports/stock-movement`, `GET /api/v1/reports/profit-loss` — masing-masing mendukung parameter `format` (pdf/excel), `start_date`, dan `end_date`
+12. THE System SHALL mengorganisasi kode backend dalam struktur folder Laravel standar dengan pemisahan: `app/Http/Controllers/API/`, `app/Services/`, `app/Repositories/`, dan `app/Http/Resources/`
+13. WHEN endpoint yang memerlukan autentikasi diakses tanpa token, THE System SHALL mengembalikan respons HTTP 401
