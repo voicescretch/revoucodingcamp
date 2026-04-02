@@ -72,7 +72,7 @@ Implementasi sistem POS berbasis web untuk Bar/Resto UMKM menggunakan Laravel 11
     - _Requirements: 10.7, 10.8, 10.9_
 
 
-- [ ] 4. Autentikasi & Middleware
+- [x] 4. Autentikasi & Middleware
   - [x] 4.1 Implementasi `AuthService` dan `AuthController`
     - `AuthService::login(array $credentials): array` — validasi kredensial, buat Sanctum token, return token + user data + role
     - `AuthService::logout(User $user): void` — revoke current token
@@ -97,12 +97,12 @@ Implementasi sistem POS berbasis web untuk Bar/Resto UMKM menggunakan Laravel 11
     - File: `tests/Property/AuthPropertyTest.php`, `tests/Property/RoleAccessPropertyTest.php`, `tests/Property/PasswordHashPropertyTest.php`, `tests/Property/UserDeactivationPropertyTest.php`
     - **Validates: Requirements 1.2, 1.6, 1.7, 1.8**
 
-- [~] 5. Checkpoint — Pastikan semua tests auth pass
+- [x] 5. Checkpoint — Pastikan semua tests auth pass
   - Pastikan semua tests pass, tanyakan ke user jika ada pertanyaan.
 
 
-- [ ] 6. Inventory Module (Bahan Baku & Stok)
-  - [~] 6.1 Implementasi `InventoryService` dan `ProductRepository`
+- [x] 6. Inventory Module (Bahan Baku & Stok)
+  - [x] 6.1 Implementasi `InventoryService` dan `ProductRepository`
     - `ProductRepository`: `findBySku`, `findLowStock`, `findById`, `create`, `update`, `delete`
     - `InventoryService::addStock(Product $product, int $quantity, string $reference): StockMovement` — tambah stok, catat stock_movement dengan stock_before/after
     - `InventoryService::deductStock(Product $product, int $quantity, string $refType, int $refId): StockMovement` — kurangi stok, catat stock_movement
@@ -110,7 +110,7 @@ Implementasi sistem POS berbasis web untuk Bar/Resto UMKM menggunakan Laravel 11
     - `InventoryService::checkStockSufficiency(int $productId, int $requiredQty): bool`
     - _Requirements: 2.1, 2.4, 2.5, 2.6, 2.7, 2.9_
 
-  - [~] 6.2 Implementasi `ProductController` dan `StockMovementController`
+  - [x] 6.2 Implementasi `ProductController` dan `StockMovementController`
     - `ProductController`: CRUD endpoints `GET/POST /api/v1/products`, `GET/PUT/DELETE /api/v1/products/{id}`, `GET /api/v1/products/low-stock`
     - Validasi SKU unik di `CreateProductRequest` (rule `unique:products,sku`)
     - Return 409 jika SKU duplikat
@@ -118,7 +118,7 @@ Implementasi sistem POS berbasis web untuk Bar/Resto UMKM menggunakan Laravel 11
     - Buat `ProductResource`, `StockMovementResource`
     - _Requirements: 2.2, 2.3, 2.8, 11.3, 11.4_
 
-  - [~] 6.3 Tulis property test untuk inventory (P5, P6, P7)
+  - [x] 6.3 Tulis property test untuk inventory (P5, P6, P7)
     - **Property 5: SKU Bersifat Unik** — duplicate SKU insert must be rejected
     - **Property 6: Stock Movement Round-Trip** — stock_after = stock_before ± quantity, consistent record
     - **Property 7: Low Stock Threshold Detection** — item appears in low-stock list iff stock ≤ threshold
@@ -126,15 +126,15 @@ Implementasi sistem POS berbasis web untuk Bar/Resto UMKM menggunakan Laravel 11
     - **Validates: Requirements 2.2, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9**
 
 
-- [ ] 7. Menu Module (Produk Menu & Resep/BOM)
-  - [~] 7.1 Implementasi endpoint menu dan recipe management
+- [x] 7. Menu Module (Produk Menu & Resep/BOM)
+  - [x] 7.1 Implementasi endpoint menu dan recipe management
     - Tambahkan endpoint di `ProductController` untuk filter menu berdasarkan kategori: `GET /api/v1/products?category_id=X&type=menu`
     - Buat `RecipeController`: `GET /api/v1/products/{id}/recipes`, `POST /api/v1/products/{id}/recipes`, `PUT /api/v1/recipes/{id}`, `DELETE /api/v1/recipes/{id}`
     - Endpoint public `GET /api/v1/tables/{uuid}/menu` — return menu dengan `is_available = true` tanpa auth
     - Saat update harga menu (`PUT /api/v1/products/{id}`), simpan harga baru; harga lama di order_items yang sudah ada tidak berubah (snapshot di `unit_price`)
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
 
-  - [~] 7.2 Tulis property test untuk menu (P8, P9, P10)
+  - [x] 7.2 Tulis property test untuk menu (P8, P9, P10)
     - **Property 8: Menu Visibility Berdasarkan Ketersediaan** — is_available=false hides menu from public endpoint
     - **Property 9: Harga Menu Terbaru Digunakan di Order Baru** — new orders use updated price as unit_price
     - **Property 10: Filter Menu Berdasarkan Kategori** — filter returns only items matching category_id
@@ -142,34 +142,34 @@ Implementasi sistem POS berbasis web untuk Bar/Resto UMKM menggunakan Laravel 11
     - **Validates: Requirements 3.2, 3.3, 3.5**
 
 
-- [ ] 8. Table Management & QR Code
-  - [~] 8.1 Implementasi `QRCodeService` dan `TableService`
+- [x] 8. Table Management & QR Code
+  - [x] 8.1 Implementasi `QRCodeService` dan `TableService`
     - `QRCodeService::generateTableQR(Table $table): string` — generate QR code SVG/PNG dengan payload `APP_URL/order?table={table.uuid}`, idempotent (selalu hasilkan URL yang sama untuk meja yang sama)
     - `TableService::create(array $data): Table` — buat meja, auto-generate QR code, simpan ke kolom `qr_code`
     - `TableService::updateStatus(Table $table, string $status): Table`
     - Validasi `table_number` unik di `CreateTableRequest`
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7_
 
-  - [~] 8.2 Implementasi `TableController`
+  - [x] 8.2 Implementasi `TableController`
     - CRUD endpoints: `GET/POST /api/v1/tables`, `GET/PUT /api/v1/tables/{id}`
     - `GET /api/v1/tables/{id}/qr` — return QR code image (SVG/PNG) untuk meja
     - Return 404 jika meja tidak ditemukan, 409 jika table_number duplikat
     - Buat `TableResource`
     - _Requirements: 4.8, 4.9, 11.5, 11.6_
 
-  - [~] 8.3 Tulis property test untuk table management (P11, P12, P13)
+  - [x] 8.3 Tulis property test untuk table management (P11, P12, P13)
     - **Property 11: Table Number Bersifat Unik** — duplicate table_number insert must be rejected
     - **Property 12: QR Code Di-generate Otomatis Saat Meja Dibuat** — qr_code column is non-null after create
     - **Property 13: QR Code Generation Bersifat Idempotent** — repeated QR generation yields same URL/payload
     - File: `tests/Property/TableUniquenessPropertyTest.php`, `tests/Property/QrCodeGenerationPropertyTest.php`, `tests/Property/QrCodeIdempotencyPropertyTest.php`
     - **Validates: Requirements 4.2, 4.4, 4.10**
 
-- [~] 9. Checkpoint — Pastikan semua tests inventory, menu, dan table pass
+- [x] 9. Checkpoint — Pastikan semua tests inventory, menu, dan table pass
   - Pastikan semua tests pass, tanyakan ke user jika ada pertanyaan.
 
 
-- [ ] 10. Order Module (Pemesanan Hybrid)
-  - [~] 10.1 Implementasi `OrderService` dan `OrderRepository`
+- [x] 10. Order Module (Pemesanan Hybrid)
+  - [x] 10.1 Implementasi `OrderService` dan `OrderRepository`
     - `OrderRepository`: `findByCode`, `findActiveOrders`, `findWithItems`
     - `OrderService::createSelfOrder(array $items, string $tableUuid): Order` — buat order tipe `self_order`, generate `order_code` unik (format: `ORD-XXXX`), set table status → occupied
     - `OrderService::createCashierOrder(array $items, string $type, ?int $tableId): Order` — buat order tipe `take_away` atau `dine_in`; untuk `dine_in` validasi meja berstatus `available`
@@ -178,7 +178,7 @@ Implementasi sistem POS berbasis web untuk Bar/Resto UMKM menggunakan Laravel 11
     - Validasi ketersediaan menu (`is_available = true`) sebelum membuat order
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8, 5.9, 5.10, 5.11, 5.12_
 
-  - [~] 10.2 Implementasi `OrderController`
+  - [x] 10.2 Implementasi `OrderController`
     - `GET /api/v1/orders` — list order aktif, support filter by status
     - `POST /api/v1/orders` — buat order (self_order tanpa auth, kasir dengan auth)
     - `GET /api/v1/orders/{id}` — detail order
@@ -188,7 +188,7 @@ Implementasi sistem POS berbasis web untuk Bar/Resto UMKM menggunakan Laravel 11
     - Return 409 jika meja tidak available untuk dine_in, 422 jika item tidak tersedia
     - _Requirements: 5.13, 11.7, 11.8_
 
-  - [~] 10.3 Tulis property test untuk order module (P14, P15, P16)
+  - [x] 10.3 Tulis property test untuk order module (P14, P15, P16)
     - **Property 14: Self-Order Menghasilkan Order Code Unik** — no two orders share the same order_code
     - **Property 15: Dine-In Memerlukan Meja Berstatus Available** — dine_in rejected if table not available
     - **Property 16: Table Status Lifecycle** — table becomes occupied on order create, available on complete/cancel
@@ -196,8 +196,8 @@ Implementasi sistem POS berbasis web untuk Bar/Resto UMKM menggunakan Laravel 11
     - **Validates: Requirements 5.2, 5.4, 5.5, 5.6, 5.9**
 
 
-- [ ] 11. Checkout / POS (Atomik)
-  - [~] 11.1 Implementasi Custom Exceptions
+- [x] 11. Checkout / POS (Atomik)
+  - [x] 11.1 Implementasi Custom Exceptions
     - Buat `app/Exceptions/InsufficientStockException.php` — HTTP 422, berisi daftar item kekurangan stok
     - Buat `app/Exceptions/InvalidPaymentException.php` — HTTP 422, paid_amount < total_amount
     - Buat `app/Exceptions/TableNotAvailableException.php` — HTTP 409, nomor meja + status saat ini
@@ -205,21 +205,21 @@ Implementasi sistem POS berbasis web untuk Bar/Resto UMKM menggunakan Laravel 11
     - Daftarkan exception handler di `bootstrap/app.php` untuk return JSON response yang konsisten
     - _Requirements: 6.2, 6.3, 6.5_
 
-  - [~] 11.2 Implementasi `CheckoutService`
+  - [x] 11.2 Implementasi `CheckoutService`
     - `CheckoutService::validateStock(Order $order): void` — iterasi order_items → recipes → cek stock bahan baku; throw `InsufficientStockException` jika tidak cukup
     - `CheckoutService::processCheckout(Order $order, array $paymentData): Transaction` — dalam `DB::transaction()`: (1) buat transaction record, (2) `deductRawMaterialStock`, (3) update order status → completed, (4) update table status → available jika dine_in/self_order, (5) buat income_entry
     - `deductRawMaterialStock`: gunakan `lockForUpdate()` pada raw material, catat StockMovement per bahan baku
     - Validasi `paid_amount >= total_amount`, throw `InvalidPaymentException` jika tidak
     - _Requirements: 6.3, 6.4, 6.5, 6.7, 6.8, 6.10_
 
-  - [~] 11.3 Implementasi `TransactionController` dan `ReceiptResource`
+  - [x] 11.3 Implementasi `TransactionController` dan `ReceiptResource`
     - `POST /api/v1/transactions/checkout` — panggil `CheckoutService::processCheckout`, return `ReceiptResource`
     - `GET /api/v1/transactions/{id}/receipt` — return data struk untuk cetak ulang
     - `ReceiptResource`: transaction_number, datetime, table_number (jika ada), items (nama, qty, unit_price, subtotal), total_amount, paid_amount, change_amount, payment_method
     - Buat `CheckoutRequest` dengan validasi order_code, payment_method, paid_amount
     - _Requirements: 6.1, 6.6, 6.9, 11.9_
 
-  - [~] 11.4 Tulis property test untuk checkout (P17, P18, P19, P20)
+  - [x] 11.4 Tulis property test untuk checkout (P17, P18, P19, P20)
     - **Property 17: Validasi Jumlah Pembayaran** — checkout rejected if paid_amount < total_amount
     - **Property 18: Atomisitas Checkout** — all 3 conditions (stock deducted, transaction saved, order completed) happen together or not at all
     - **Property 19: Struk Mengandung Semua Field yang Diperlukan** — receipt contains all required fields
@@ -227,7 +227,7 @@ Implementasi sistem POS berbasis web untuk Bar/Resto UMKM menggunakan Laravel 11
     - File: `tests/Property/PaymentValidationPropertyTest.php`, `tests/Property/CheckoutAtomicityPropertyTest.php`, `tests/Property/ReceiptCompletenessPropertyTest.php`; `src/__tests__/changeCalculation.property.test.js` (fast-check)
     - **Validates: Requirements 6.3, 6.4, 6.5, 6.6, 6.8**
 
-  - [ ] 11.5 Tulis feature tests untuk checkout flows
+  - [x] 11.5 Tulis feature tests untuk checkout flows
     - Test: checkout berhasil → stok berkurang, transaksi tersimpan, order completed, income_entry dibuat
     - Test: checkout gagal karena stok tidak cukup → rollback penuh (tidak ada transaksi, stok tidak berubah)
     - Test: checkout gagal karena paid_amount kurang → return 422
@@ -235,12 +235,12 @@ Implementasi sistem POS berbasis web untuk Bar/Resto UMKM menggunakan Laravel 11
     - File: `tests/Feature/CheckoutTest.php`
     - _Requirements: 6.4, 6.5_
 
-- [ ] 12. Checkpoint — Pastikan semua tests order dan checkout pass
+- [x] 12. Checkpoint — Pastikan semua tests order dan checkout pass
   - Pastikan semua tests pass, tanyakan ke user jika ada pertanyaan.
 
 
-- [ ] 13. Finance Module
-  - [ ] 13.1 Implementasi `FinanceService` dan `FinanceController`
+- [x] 13. Finance Module
+  - [x] 13.1 Implementasi `FinanceService` dan `FinanceController`
     - `FinanceService::getSummary(string $period, ?string $startDate, ?string $endDate): array` — hitung total_income, total_expense, net_profit; tandai "rugi" jika net_profit < 0
     - `FinanceController`:
       - `GET /api/v1/expenses` — list pengeluaran dengan filter tanggal
@@ -250,14 +250,14 @@ Implementasi sistem POS berbasis web untuk Bar/Resto UMKM menggunakan Laravel 11
       - `GET /api/v1/finance/summary` — rekap keuangan (daily/weekly/monthly via query param)
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7, 11.10_
 
-  - [ ] 13.2 Tulis property test untuk finance (P21)
+  - [x] 13.2 Tulis property test untuk finance (P21)
     - **Property 21: Kalkulasi Summary Keuangan** — net_profit = total_income - total_expense always
     - File: `tests/Property/FinanceSummaryPropertyTest.php`
     - **Validates: Requirements 7.5**
 
 
-- [ ] 14. Reporting Module (PDF & Excel)
-  - [~] 14.1 Implementasi `ReportService` dan template laporan
+- [x] 14. Reporting Module (PDF & Excel)
+  - [x] 14.1 Implementasi `ReportService` dan template laporan
     - `ReportService::generateStockReport(string $format, ?string $startDate, ?string $endDate)` — semua produk + stock, stock_value (buy_price × stock), status low_stock
     - `ReportService::generateStockMovementReport(string $format, string $startDate, string $endDate)` — riwayat stock_movements dalam rentang tanggal
     - `ReportService::generateProfitLossReport(string $format, string $startDate, string $endDate)` — total_income, total_expense, net_profit
@@ -266,52 +266,52 @@ Implementasi sistem POS berbasis web untuk Bar/Resto UMKM menggunakan Laravel 11
     - Validasi `start_date <= end_date` di `ReportRequest`, return 400 jika tidak valid
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8_
 
-  - [ ] 14.2 Implementasi `ReportController`
+  - [x] 14.2 Implementasi `ReportController`
     - `GET /api/v1/reports/stock?format=pdf|excel&start_date=&end_date=`
     - `GET /api/v1/reports/stock-movement?format=pdf|excel&start_date=&end_date=`
     - `GET /api/v1/reports/profit-loss?format=pdf|excel&start_date=&end_date=`
     - Return file download response (Content-Disposition: attachment)
     - _Requirements: 11.11_
 
-  - [ ] 14.3 Tulis property test untuk reporting (P22, P23)
+  - [x] 14.3 Tulis property test untuk reporting (P22, P23)
     - **Property 22: Kelengkapan Data Laporan Stok** — report contains all products with accurate stock_value and low_stock status
     - **Property 23: Round-Trip Data Numerik PDF/Excel** — numeric values in PDF export identical to Excel export for same data/period
     - File: `tests/Property/ReportCompletenessPropertyTest.php`, `tests/Property/ReportRoundTripPropertyTest.php`
     - **Validates: Requirements 8.1, 8.9**
 
 
-- [ ] 15. Dashboard API
-  - [~] 15.1 Implementasi `DashboardController`
+- [x] 15. Dashboard API
+  - [x] 15.1 Implementasi `DashboardController`
     - `GET /api/v1/dashboard` — return: total_sales_today (sum transactions hari ini), total_transactions_today (count), critical_stock_items (list produk dengan stock ≤ threshold), sales_chart_7days (array {date, total} 7 hari terakhir), occupied_tables_count
     - Query harus efisien (gunakan index yang sudah dibuat), response dalam < 5 detik
     - _Requirements: 9.1, 9.2, 9.3, 9.5_
 
-  - [ ] 15.2 Tulis property test untuk database constraints (P24)
+  - [x] 15.2 Tulis property test untuk database constraints (P24)
     - **Property 24: Database Constraint Enforcement** — FK and unique constraint violations are rejected by DB and system returns appropriate error
     - File: `tests/Property/DatabaseConstraintPropertyTest.php`
     - **Validates: Requirements 10.11**
 
-- [ ] 16. Checkpoint — Pastikan semua backend tests pass
+- [x] 16. Checkpoint — Pastikan semua backend tests pass
   - Pastikan semua tests pass, tanyakan ke user jika ada pertanyaan.
 
 
-- [ ] 17. Frontend: Setup, Auth, dan Layout
-  - [~] 17.1 Setup Axios instance, auth store, dan routing
+- [x] 17. Frontend: Setup, Auth, dan Layout
+  - [x] 17.1 Setup Axios instance, auth store, dan routing
     - Buat `src/services/api.js` — Axios instance dengan `baseURL=/api/v1/`, request interceptor (attach Bearer token), response interceptor (redirect ke login jika 401)
     - Buat `src/stores/authStore.js` (Zustand) — state: user, token, role; actions: login, logout, setUser
     - Buat `src/hooks/useAuth.js` — wrapper untuk authStore
     - Setup React Router: route guard `ProtectedRoute` berdasarkan role, redirect unauthenticated ke `/login`
     - _Requirements: 1.1, 1.4, 1.5_
 
-  - [~] 17.2 Implementasi halaman Login dan layout utama
+  - [x] 17.2 Implementasi halaman Login dan layout utama
     - Buat `src/pages/auth/Login.jsx` — form email + password, call `POST /api/v1/auth/login`, simpan token ke authStore, redirect berdasarkan role
     - Buat layout komponen: `Sidebar.jsx` (navigasi berdasarkan role), `Header.jsx`, `MainLayout.jsx`
     - Buat UI components: `src/components/ui/Button.jsx`, `Modal.jsx`, `Table.jsx`, `Badge.jsx`
     - _Requirements: 1.2, 1.3_
 
 
-- [ ] 18. Frontend: Dashboard Manager
-  - [~] 18.1 Implementasi `src/pages/manager/Dashboard.jsx`
+- [x] 18. Frontend: Dashboard Manager
+  - [x] 18.1 Implementasi `src/pages/manager/Dashboard.jsx`
     - Fetch `GET /api/v1/dashboard` saat mount dan setiap 60 detik (setInterval)
     - Tampilkan StatCards: total penjualan hari ini, total transaksi, stok kritis, meja terisi
     - Buat `src/components/charts/SalesChart.jsx` menggunakan Recharts — bar/line chart penjualan 7 hari
@@ -319,20 +319,20 @@ Implementasi sistem POS berbasis web untuk Bar/Resto UMKM menggunakan Laravel 11
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5_
 
 
-- [ ] 19. Frontend: Inventory, Menu, dan Table Management
-  - [~] 19.1 Implementasi halaman Products/Inventory (`src/pages/manager/Products.jsx`)
+- [x] 19. Frontend: Inventory, Menu, dan Table Management
+  - [x] 19.1 Implementasi halaman Products/Inventory (`src/pages/manager/Products.jsx`)
     - List produk dengan kolom: SKU, nama, kategori, stok, threshold, harga beli, harga jual, status
     - Form modal untuk tambah/edit produk (validasi SKU unik di frontend)
     - Tombol tambah/kurangi stok manual (call `POST /api/v1/stock-movements`)
     - Tab atau filter untuk melihat daftar stok kritis
     - _Requirements: 2.1, 2.2, 2.3, 2.6, 2.7, 2.8_
 
-  - [~] 19.2 Implementasi halaman Recipe/BOM management
+  - [x] 19.2 Implementasi halaman Recipe/BOM management
     - Di halaman detail produk (menu), tampilkan daftar resep (bahan baku + qty)
     - Form untuk tambah/edit/hapus recipe item
     - _Requirements: 3.1_
 
-  - [~] 19.3 Implementasi halaman Tables (`src/pages/manager/Tables.jsx`)
+  - [x] 19.3 Implementasi halaman Tables (`src/pages/manager/Tables.jsx`)
     - List meja dengan status badge (available/occupied/reserved)
     - Form modal untuk tambah meja baru
     - Tombol "Lihat QR" — fetch `GET /api/v1/tables/{id}/qr` dan tampilkan QR code image dalam modal
@@ -340,21 +340,21 @@ Implementasi sistem POS berbasis web untuk Bar/Resto UMKM menggunakan Laravel 11
     - _Requirements: 4.1, 4.2, 4.4, 4.5, 4.6, 4.7, 4.9_
 
 
-- [ ] 20. Frontend: POS/Kasir Interface
-  - [~] 20.1 Implementasi halaman Orders Kasir (`src/pages/cashier/Orders.jsx`)
+- [x] 20. Frontend: POS/Kasir Interface
+  - [x] 20.1 Implementasi halaman Orders Kasir (`src/pages/cashier/Orders.jsx`)
     - List order aktif dengan filter by status (pending, confirmed, preparing, ready)
     - Tombol update status order per item
     - Badge warna berdasarkan status order
     - _Requirements: 5.13_
 
-  - [~] 20.2 Implementasi halaman Checkout Kasir (`src/pages/cashier/Checkout.jsx`)
+  - [x] 20.2 Implementasi halaman Checkout Kasir (`src/pages/cashier/Checkout.jsx`)
     - Buat `src/components/pos/OrderCodeInput.jsx` — input field untuk scan/ketik Order_Code, call `GET /api/v1/orders/by-code/{code}`, tampilkan detail order
     - Buat `src/components/pos/PaymentForm.jsx` — pilih metode bayar (cash/card/qris), input paid_amount, tampilkan kembalian real-time (calculated di frontend)
     - Buat `src/components/pos/ReceiptModal.jsx` — tampilkan struk setelah checkout berhasil, tombol cetak (window.print)
     - Call `POST /api/v1/transactions/checkout` saat konfirmasi bayar
     - _Requirements: 6.1, 6.2, 6.3, 6.6, 6.7, 6.8_
 
-  - [~] 20.3 Implementasi halaman Self-Order Pelanggan (`src/pages/customer/SelfOrder.jsx`)
+  - [x] 20.3 Implementasi halaman Self-Order Pelanggan (`src/pages/customer/SelfOrder.jsx`)
     - Baca `table` UUID dari query param (`/order?table=UUID`)
     - Fetch `GET /api/v1/tables/{uuid}/menu` — tampilkan info meja + daftar menu
     - UI pilih menu + qty, tambah ke cart (state lokal)
@@ -363,31 +363,31 @@ Implementasi sistem POS berbasis web untuk Bar/Resto UMKM menggunakan Laravel 11
     - _Requirements: 5.1, 5.2, 5.7, 5.8_
 
 
-- [ ] 21. Frontend: Finance dan Reports
-  - [~] 21.1 Implementasi halaman Expenses (`src/pages/finance/Expenses.jsx`)
+- [x] 21. Frontend: Finance dan Reports
+  - [x] 21.1 Implementasi halaman Expenses (`src/pages/finance/Expenses.jsx`)
     - List pengeluaran dengan filter tanggal
     - Form modal tambah pengeluaran baru (tanggal, jumlah, kategori, keterangan, upload bukti)
     - _Requirements: 7.2, 7.3_
 
-  - [~] 21.2 Implementasi halaman Finance Summary (`src/pages/finance/Summary.jsx`)
+  - [x] 21.2 Implementasi halaman Finance Summary (`src/pages/finance/Summary.jsx`)
     - Tampilkan rekap keuangan: total pemasukan, total pengeluaran, laba/rugi bersih
     - Toggle period: daily/weekly/monthly
     - Tandai periode "rugi" dengan warna merah
     - List income_entries dengan tombol validasi
     - _Requirements: 7.4, 7.5, 7.6, 7.7_
 
-  - [~] 21.3 Implementasi halaman Reports (`src/pages/manager/Reports.jsx`)
+  - [x] 21.3 Implementasi halaman Reports (`src/pages/manager/Reports.jsx`)
     - Form pilih jenis laporan (stok / arus barang / laba-rugi), format (PDF/Excel), rentang tanggal
     - Validasi start_date ≤ end_date di frontend sebelum submit
     - Tombol download — call endpoint report dengan `format=pdf` atau `format=excel`, trigger file download via Blob URL
     - _Requirements: 8.1, 8.2, 8.3, 8.6, 8.7_
 
-- [ ] 22. Checkpoint — Pastikan semua frontend berfungsi dan tests pass
+- [x] 22. Checkpoint — Pastikan semua frontend berfungsi dan tests pass
   - Pastikan semua tests pass, tanyakan ke user jika ada pertanyaan.
 
 
-- [ ] 23. Feature Tests Backend
-  - [~] 23.1 Tulis feature tests untuk Auth module
+- [x] 23. Feature Tests Backend
+  - [x] 23.1 Tulis feature tests untuk Auth module
     - Test: login dengan kredensial valid → return token + role
     - Test: login dengan kredensial invalid → return 401
     - Test: akses endpoint protected tanpa token → return 401
@@ -396,7 +396,7 @@ Implementasi sistem POS berbasis web untuk Bar/Resto UMKM menggunakan Laravel 11
     - File: `tests/Feature/AuthTest.php`
     - _Requirements: 1.2, 1.3, 1.5, 1.6, 1.8_
 
-  - [~] 23.2 Tulis feature tests untuk Inventory module
+  - [x] 23.2 Tulis feature tests untuk Inventory module
     - Test: tambah produk dengan SKU duplikat → return 409
     - Test: tambah stok → stock bertambah + stock_movement tercatat
     - Test: kurangi stok → stock berkurang + stock_movement tercatat
@@ -404,7 +404,7 @@ Implementasi sistem POS berbasis web untuk Bar/Resto UMKM menggunakan Laravel 11
     - File: `tests/Feature/InventoryTest.php`
     - _Requirements: 2.2, 2.3, 2.4, 2.5, 2.6, 2.9_
 
-  - [~] 23.3 Tulis feature tests untuk Order dan Table module
+  - [x] 23.3 Tulis feature tests untuk Order dan Table module
     - Test: self-order via QR → order dibuat, table status → occupied, order_code dikembalikan
     - Test: dine_in dengan meja occupied → return 409
     - Test: order completed → table status → available
@@ -413,7 +413,7 @@ Implementasi sistem POS berbasis web untuk Bar/Resto UMKM menggunakan Laravel 11
     - File: `tests/Feature/OrderTest.php`, `tests/Feature/TableTest.php`
     - _Requirements: 5.2, 5.4, 5.5, 5.6, 5.9, 5.12, 4.2_
 
-  - [~] 23.4 Tulis feature tests untuk Finance dan Report module
+  - [x] 23.4 Tulis feature tests untuk Finance dan Report module
     - Test: tambah expense → total_expense harian bertambah
     - Test: finance summary menghitung net_profit dengan benar
     - Test: generate laporan stok PDF → return file PDF
@@ -421,7 +421,7 @@ Implementasi sistem POS berbasis web untuk Bar/Resto UMKM menggunakan Laravel 11
     - File: `tests/Feature/FinanceTest.php`, `tests/Feature/ReportTest.php`
     - _Requirements: 7.3, 7.5, 8.4, 8.7_
 
-- [ ] 24. Final Checkpoint — Semua tests pass
+- [x] 24. Final Checkpoint — Semua tests pass
   - Pastikan semua tests pass (backend + frontend), tanyakan ke user jika ada pertanyaan.
 
 ## Notes

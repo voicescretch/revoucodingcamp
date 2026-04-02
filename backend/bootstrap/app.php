@@ -17,5 +17,22 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(function (\App\Exceptions\InsufficientStockException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+                'items'   => $e->getInsufficientItems(),
+            ], 422);
+        });
+
+        $exceptions->render(function (\App\Exceptions\InvalidPaymentException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        });
+
+        $exceptions->render(function (\App\Exceptions\TableNotAvailableException $e) {
+            return response()->json(['message' => $e->getMessage()], 409);
+        });
+
+        $exceptions->render(function (\App\Exceptions\OrderAlreadyProcessedException $e) {
+            return response()->json(['message' => $e->getMessage()], 409);
+        });
     })->create();
