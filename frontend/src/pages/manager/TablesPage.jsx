@@ -149,11 +149,11 @@ const QrModal = ({ isOpen, onClose, table }) => {
     setLoading(true)
 
     api
-      .get(`tables/${table.id}/qr`, { responseType: 'text' })
+      .get(`tables/${table.id}/qr`, { responseType: 'text', transformResponse: [(data) => data] })
       .then((res) => {
         const data = res.data
-        // Detect SVG string
-        if (typeof data === 'string' && data.trim().startsWith('<svg')) {
+        // Detect SVG string (may start with <?xml or <svg)
+        if (typeof data === 'string' && (data.trim().startsWith('<svg') || data.trim().startsWith('<?xml'))) {
           setQrContent(data)
           setQrType('svg')
         } else if (typeof data === 'string' && data.trim().startsWith('data:')) {
