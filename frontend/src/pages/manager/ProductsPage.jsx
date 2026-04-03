@@ -57,7 +57,7 @@ const ProductFormModal = ({ isOpen, onClose, onSaved, editProduct, allSkus }) =>
   useEffect(() => {
     if (!isOpen) return
     api
-      .get('categories?type=product')
+      .get('categories', { params: { type: 'product' } })
       .then((res) => setCategories(res.data.data ?? res.data ?? []))
       .catch(() => setCategories([]))
   }, [isOpen])
@@ -488,10 +488,21 @@ const ProductsPage = () => {
                 <div className="flex items-center justify-end gap-2">
                   <Button
                     size="sm"
+                    variant={row.is_available ? 'danger' : 'secondary'}
+                    onClick={async () => {
+                      const product = products.find((p) => p.id === row.id) ?? row
+                      await api.put(`products/${product.id}`, { is_available: !product.is_available })
+                      fetchProducts()
+                    }}
+                  >
+                    {row.is_available ? 'Habis' : 'Tersedia'}
+                  </Button>
+                  <Button
+                    size="sm"
                     variant="secondary"
                     onClick={() => navigate(`/manager/products/${row.id}/recipes`)}
                   >
-                    Kelola Resep
+                    Resep
                   </Button>
                   <Button
                     size="sm"

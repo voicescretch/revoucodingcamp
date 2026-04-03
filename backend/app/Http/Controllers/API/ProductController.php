@@ -66,7 +66,7 @@ class ProductController extends Controller
             return response()->json(['message' => 'Product not found.'], 404);
         }
 
-        $request->validate([
+        $validated = $request->validate([
             'sku'                 => ['sometimes', 'string', 'unique:products,sku,' . $product->id],
             'name'                => ['sometimes', 'string'],
             'category_id'         => ['nullable', 'exists:categories,id'],
@@ -80,7 +80,7 @@ class ProductController extends Controller
             'image_path'          => ['nullable', 'string'],
         ]);
 
-        $updated = $this->productRepository->update($product, $request->all());
+        $updated = $this->productRepository->update($product, $validated);
 
         return response()->json(new ProductResource($updated->load('category')));
     }

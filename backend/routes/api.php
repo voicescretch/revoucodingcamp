@@ -10,6 +10,8 @@ use App\Http\Controllers\API\ReportController;
 use App\Http\Controllers\API\StockMovementController;
 use App\Http\Controllers\API\TableController;
 use App\Http\Controllers\API\TransactionController;
+use App\Models\Category;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -20,6 +22,17 @@ Route::prefix('v1')->group(function () {
         Route::middleware('auth:sanctum')->group(function () {
             Route::post('/logout', [AuthController::class, 'logout']);
             Route::get('/me', [AuthController::class, 'me']);
+        });
+    });
+
+    // Categories (authenticated)
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/categories', function (Request $request) {
+            $query = Category::query();
+            if ($request->has('type')) {
+                $query->where('type', $request->input('type'));
+            }
+            return response()->json(['data' => $query->get()]);
         });
     });
 
@@ -82,12 +95,10 @@ Route::prefix('v1')->group(function () {
     Route::get('/tables/{identifier}/menu', [TableController::class, 'menu']);
 
     // Order routes
-    // POST has no auth — handles both guest (self_order) and authenticated (kasir) requests
     Route::post('/orders', [OrderController::class, 'store']);
 
     Route::middleware(['auth:sanctum', 'role:kasir,head_manager'])->group(function () {
         Route::get('/orders', [OrderController::class, 'index']);
-        // by-code MUST be before {id} to avoid routing conflicts
         Route::get('/orders/by-code/{code}', [OrderController::class, 'byCode']);
         Route::get('/orders/{id}', [OrderController::class, 'show']);
         Route::put('/orders/{id}/status', [OrderController::class, 'updateStatus']);

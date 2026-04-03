@@ -2,8 +2,112 @@ import { useState, useEffect, useCallback } from 'react'
 import MainLayout from '../../components/layout/MainLayout'
 import Badge from '../../components/ui/Badge'
 import Button from '../../components/ui/Button'
+import Modal from '../../components/ui/Modal'
 import Table from '../../components/ui/Table'
 import api from '../../services/api'
+
+// ── Create Order Modal ────────────────────────────────────────────────────────
+
+const CreateOrderModal = ({ isOpen, onClose, onCreated }) => {
+  const [orderType, setOrderType] = useState('take_away')
+  const [tables, setTables] = useState([])
+  const [products, setProducts] = useState([])
+  const [tableId, setTableId] = useState('')
+  const [items, setItems] = useState([{ product_id: '', quantity: 1 }])
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    if (!isOpen) return
+    setOrderType('take_away'); setTableId(''); setItems([{ product_id: '', quantity: 1 }]); setError(null)
+    api.get('tables').then(r => setTables(r.data.data ?? r.data ?? [])).catch(() => {})
+    api.get('products', { params: { is_available: true } }).then(r => setProducts(r.data.data ?? r.data ?? [])).catch(() => {})
+  }, [isOpen])
+
+  const addItem = () => setItems(prev => [...prev, { product_id: '', quantity: 1 }])
+  const removeItem = (i) => setItems(prev => prev.filter((_, idx) => idx !== i))
+  const updateItem = (i, field, val) => setItems(prev => prev.map((it, idx) => idx === i ? { ...it, [field]: val } : it))
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    const validItems = items.filter(it => it.product_id && it.quantity > 0)
+    if (!validItems.length) { setError('Tambahkan minimal 1 item'); return }
+    if (orderType === 'dine_in' && !tableId) { setError('Pilih meja untuk Dine In'); return }
+    setSaving(true); setError(null)
+    try {
+      const payload = {
+        order_type: orderType,
+        items: validItems.map(it => ({ product_id: Number(it.product_id), quantity: Number(it.quantity) })),
+      }
+      if (orderType === 'dine_in') payload.table_id = Number(tableId)
+      await api.post('orders', payload)
+      onCreated()
+    } catch (err) {
+      setError(err.response?.data?.message ?? 'Gagal membuat order')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const availableTables = tables.filter(t => t.status === 'available')
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Buat Order Baru">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && <div className="rounded bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">{error}</div>}
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Tipe Order</label>
+          <div className="flex gap-3">
+            {[['take_away','Take Away'],['dine_in','Dine In']].map(([val, label]) => (
+              <button key={val} type="button" onClick={() => setOrderType(val)}
+                className={`px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${orderType === val ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-700 hover:bg-gray-50'}`}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {orderType === 'dine_in' && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Meja *</label>
+            <select value={tableId} onChange={e => setTableId(e.target.value)}
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="">Pilih meja...</option>
+              {availableTables.map(t => <option key={t.id} value={t.id}>{t.name} ({t.table_number})</option>)}
+            </select>
+          </div>
+        )}
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Item Pesanan</label>
+          <div className="space-y-2">
+            {items.map((item, i) => (
+              <div key={i} className="flex gap-2 items-center">
+                <select value={item.product_id} onChange={e => updateItem(i, 'product_id', e.target.value)}
+                  className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="">Pilih menu...</option>
+                  {products.map(p => <option key={p.id} value={p.id}>{p.name} - Rp {Number(p.sell_price).toLocaleString('id-ID')}</option>)}
+                </select>
+                <input type="number" min="1" value={item.quantity} onChange={e => updateItem(i, 'quantity', e.target.value)}
+                  className="w-16 rounded-md border border-gray-300 px-2 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                {items.length > 1 && (
+                  <button type="button" onClick={() => removeItem(i)} className="text-red-500 hover:text-red-700 text-lg font-bold px-1">×</button>
+                )}
+              </div>
+            ))}
+          </div>
+          <button type="button" onClick={addItem} className="mt-2 text-sm text-blue-600 hover:text-blue-800">+ Tambah item</button>
+        </div>
+
+        <div className="flex justify-end gap-2 pt-2">
+          <Button variant="secondary" type="button" onClick={onClose}>Batal</Button>
+          <Button type="submit" loading={saving}>Buat Order</Button>
+        </div>
+      </form>
+    </Modal>
+  )
+}
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -132,6 +236,7 @@ const OrdersPage = () => {
   const [updatingId, setUpdatingId] = useState(null)
   const [cancelTarget, setCancelTarget] = useState(null)
   const [cancelLoading, setCancelLoading] = useState(false)
+  const [showCreateModal, setShowCreateModal] = useState(false)
 
   const fetchOrders = useCallback(async () => {
     setLoading(true)
@@ -228,9 +333,12 @@ const OrdersPage = () => {
             <h1 className="text-xl font-semibold text-gray-900">Daftar Order</h1>
             <p className="text-sm text-gray-500 mt-0.5">Kelola dan perbarui status order aktif</p>
           </div>
-          <Button variant="secondary" size="sm" onClick={fetchOrders} disabled={loading}>
-            {loading ? 'Memuat...' : 'Refresh'}
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => setShowCreateModal(true)}>+ Buat Order</Button>
+            <Button variant="secondary" size="sm" onClick={fetchOrders} disabled={loading}>
+              {loading ? 'Memuat...' : 'Refresh'}
+            </Button>
+          </div>
         </div>
 
         {/* Filter Tabs */}
@@ -271,6 +379,12 @@ const OrdersPage = () => {
           loading={cancelLoading}
         />
       )}
+
+      <CreateOrderModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onCreated={() => { setShowCreateModal(false); fetchOrders() }}
+      />
     </MainLayout>
   )
 }

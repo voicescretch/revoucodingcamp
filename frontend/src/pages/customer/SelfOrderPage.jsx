@@ -11,36 +11,28 @@ const cartTotal = (cart) => cart.reduce((sum, item) => sum + item.sell_price * i
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 const MenuCard = ({ item, qty, onAdd, onRemove }) => (
-  <div className={`rounded-xl border bg-white p-4 shadow-sm flex flex-col gap-2 ${!item.is_available ? 'opacity-50' : ''}`}>
+  <div className="rounded-xl border bg-white p-4 shadow-sm flex flex-col gap-2">
     <div className="flex-1">
-      <div className="flex items-start justify-between gap-2">
-        <h3 className="font-semibold text-gray-900">{item.name}</h3>
-        {!item.is_available && (
-          <span className="shrink-0 rounded-full bg-gray-200 px-2 py-0.5 text-xs text-gray-500">Habis</span>
-        )}
-      </div>
+      <h3 className="font-semibold text-gray-900">{item.name}</h3>
       {item.description && <p className="mt-1 text-sm text-gray-500 line-clamp-2">{item.description}</p>}
       <p className="mt-2 font-bold text-amber-600">{formatRupiah(item.sell_price)}</p>
     </div>
-
-    {item.is_available && (
-      <div className="flex items-center gap-3 mt-1">
-        <button
-          onClick={onRemove}
-          disabled={qty === 0}
-          className="w-8 h-8 rounded-full border border-gray-300 text-gray-600 font-bold disabled:opacity-30 hover:bg-gray-100 transition"
-        >
-          −
-        </button>
-        <span className="w-6 text-center font-semibold text-gray-800">{qty}</span>
-        <button
-          onClick={onAdd}
-          className="w-8 h-8 rounded-full bg-amber-500 text-white font-bold hover:bg-amber-600 transition"
-        >
-          +
-        </button>
-      </div>
-    )}
+    <div className="flex items-center gap-3 mt-1">
+      <button
+        onClick={onRemove}
+        disabled={qty === 0}
+        className="w-8 h-8 rounded-full border border-gray-300 text-gray-600 font-bold disabled:opacity-30 hover:bg-gray-100 transition"
+      >
+        −
+      </button>
+      <span className="w-6 text-center font-semibold text-gray-800">{qty}</span>
+      <button
+        onClick={onAdd}
+        className="w-8 h-8 rounded-full bg-amber-500 text-white font-bold hover:bg-amber-600 transition"
+      >
+        +
+      </button>
+    </div>
   </div>
 )
 
@@ -125,7 +117,7 @@ const SelfOrderPage = () => {
   const [orderCode, setOrderCode] = useState(null)
 
   // Group menu by category
-  const categories = [...new Set(menuItems.map((m) => m.category ?? 'Lainnya'))]
+  const categories = [...new Set(menuItems.map((m) => m.category?.name ?? 'Lainnya'))]
 
   useEffect(() => {
     if (!tableUuid) {
@@ -137,8 +129,8 @@ const SelfOrderPage = () => {
     const fetchMenu = async () => {
       try {
         const res = await api.get(`tables/${tableUuid}/menu`)
-        setTableInfo(res.data.table)
-        setMenuItems(res.data.menu ?? [])
+        setTableInfo(res.data.data?.table ?? res.data.table)
+        setMenuItems(res.data.data?.menu ?? res.data.menu ?? [])
       } catch (err) {
         const status = err.response?.status
         if (status === 404) {
@@ -184,7 +176,7 @@ const SelfOrderPage = () => {
     try {
       const payload = {
         order_type: 'self_order',
-        table_id: tableInfo.id,
+        table_identifier: tableInfo.table_number,
         items: cart.map(({ product_id, quantity }) => ({ product_id, quantity })),
       }
       const res = await api.post('orders', payload)
@@ -262,7 +254,7 @@ const SelfOrderPage = () => {
               <h2 className="text-base font-bold text-gray-700 uppercase tracking-wide mb-3">{cat}</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {menuItems
-                  .filter((m) => (m.category ?? 'Lainnya') === cat)
+                  .filter((m) => (m.category?.name ?? 'Lainnya') === cat)
                   .map((item) => (
                     <MenuCard
                       key={item.id}
